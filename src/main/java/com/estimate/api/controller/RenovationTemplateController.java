@@ -6,11 +6,10 @@ import com.estimate.application.service.RenovationTemplateService;
 import com.estimate.infrastructure.security.UserPrincipal;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
 @RestController
 @RequestMapping("/api/templates")
@@ -20,38 +19,37 @@ public class RenovationTemplateController {
     private final RenovationTemplateService templateService;
     
     @GetMapping
-    public ResponseEntity<List<RenovationTemplateResponse>> getTemplates(
+    public Flux<RenovationTemplateResponse> getTemplates(
             @AuthenticationPrincipal UserPrincipal principal) {
-        return ResponseEntity.ok(templateService.getUserTemplates(principal.getId()));
+        return templateService.getUserTemplates(principal.getId());
     }
     
     @GetMapping("/{id}")
-    public ResponseEntity<RenovationTemplateResponse> getTemplate(
+    public Mono<RenovationTemplateResponse> getTemplate(
             @AuthenticationPrincipal UserPrincipal principal,
             @PathVariable String id) {
-        return ResponseEntity.ok(templateService.getTemplate(principal.getId(), id));
+        return templateService.getTemplate(principal.getId(), id);
     }
     
     @PostMapping
-    public ResponseEntity<RenovationTemplateResponse> createTemplate(
+    public Mono<RenovationTemplateResponse> createTemplate(
             @AuthenticationPrincipal UserPrincipal principal,
             @Valid @RequestBody RenovationTemplateRequest request) {
-        return ResponseEntity.ok(templateService.createTemplate(principal.getId(), request));
+        return templateService.createTemplate(principal.getId(), request);
     }
     
     @PutMapping("/{id}")
-    public ResponseEntity<RenovationTemplateResponse> updateTemplate(
+    public Mono<RenovationTemplateResponse> updateTemplate(
             @AuthenticationPrincipal UserPrincipal principal,
             @PathVariable String id,
             @Valid @RequestBody RenovationTemplateRequest request) {
-        return ResponseEntity.ok(templateService.updateTemplate(principal.getId(), id, request));
+        return templateService.updateTemplate(principal.getId(), id, request);
     }
     
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteTemplate(
+    public Mono<Void> deleteTemplate(
             @AuthenticationPrincipal UserPrincipal principal,
             @PathVariable String id) {
-        templateService.deleteTemplate(principal.getId(), id);
-        return ResponseEntity.noContent().build();
+        return templateService.deleteTemplate(principal.getId(), id);
     }
 }

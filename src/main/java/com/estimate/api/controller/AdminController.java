@@ -3,11 +3,10 @@ package com.estimate.api.controller;
 import com.estimate.application.dto.*;
 import com.estimate.application.service.*;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
 @RestController
 @RequestMapping("/api/admin")
@@ -21,28 +20,27 @@ public class AdminController {
     private final EstimateService estimateService;
     
     @GetMapping("/users")
-    public ResponseEntity<List<UserResponse>> getAllUsers() {
-        return ResponseEntity.ok(userService.getAllUsers());
+    public Flux<UserResponse> getAllUsers() {
+        return userService.getAllUsers();
     }
     
     @DeleteMapping("/users/{id}")
-    public ResponseEntity<Void> deleteUser(@PathVariable String id) {
-        userService.deleteUserAsAdmin(id);
-        return ResponseEntity.noContent().build();
+    public Mono<Void> deleteUser(@PathVariable String id) {
+        return userService.deleteUserAsAdmin(id);
     }
     
     @GetMapping("/works")
-    public ResponseEntity<List<WorkResponse>> getAllWorks() {
-        return ResponseEntity.ok(workService.getAllWorks());
+    public Flux<WorkResponse> getAllWorks() {
+        return workService.getAllWorks();
     }
     
     @GetMapping("/templates")
-    public ResponseEntity<List<RenovationTemplateResponse>> getAllTemplates() {
-        return ResponseEntity.ok(templateService.getAllTemplates());
+    public Flux<RenovationTemplateResponse> getAllTemplates() {
+        return templateService.getAllTemplates();
     }
     
     @GetMapping("/estimates")
-    public ResponseEntity<List<EstimateResponse>> getAllEstimates() {
-        return ResponseEntity.ok(estimateService.getAllEstimates());
+    public Flux<EstimateResponse> getAllEstimates() {
+        return estimateService.getAllEstimates();
     }
 }

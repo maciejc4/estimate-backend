@@ -1,14 +1,14 @@
 # Estimate Backend
 
-Backend API for construction cost estimation system.
+Backend API for construction cost estimation system using reactive programming with Spring WebFlux.
 
 ## Technology Stack
 
-- Java 21
-- Spring Boot 3.4
-- MongoDB (embedded for development)
+- Java 21 with Virtual Threads (Project Loom)
+- Spring Boot 3.4 with WebFlux (Reactive)
+- MongoDB Reactive (embedded for development)
 - JWT Authentication
-- OpenPDF for PDF generation
+- Clean Architecture with Domain-Driven Design
 
 ## Prerequisites
 
@@ -58,7 +58,6 @@ docker run -p 8080:8080 estimate-backend
 ### Authentication
 - `POST /api/auth/register` - Register new user
 - `POST /api/auth/login` - Login
-- `POST /api/auth/demo` - Demo login (no registration required)
 
 ### Users
 - `GET /api/users/me` - Get current user
@@ -85,7 +84,6 @@ docker run -p 8080:8080 estimate-backend
 - `POST /api/estimates` - Create estimate
 - `PUT /api/estimates/{id}` - Update estimate
 - `DELETE /api/estimates/{id}` - Delete estimate
-- `GET /api/estimates/{id}/pdf?detail=full|basic` - Generate PDF
 
 ### Admin (requires ADMIN role)
 - `GET /api/admin/users` - List all users
@@ -120,3 +118,82 @@ gcloud run deploy estimate-backend \
   --region europe-central2 \
   --allow-unauthenticated
 ```
+
+## Requirements
+
+### 1. Application Overview
+
+- Web application for small construction companies
+- Goal: Quick generation of cost estimates for clients
+- Reactive architecture using Spring WebFlux for better scalability
+
+### 2. User Scenarios
+
+#### 2.1 Account Management
+- User creates account and logs in
+- User can delete their account
+- User can change password
+- Passwords stored securely using bcrypt
+
+#### 2.2 Works (Construction Activities)
+- User creates works (e.g., painting, priming, installing baseboards)
+- Each work has a unit (e.g., m² for painting, mb for baseboards)
+- Materials can be added to each work with their consumption rate
+- Users can view, edit, add, and delete their works
+
+#### 2.3 Renovation Templates
+- User defines renovation templates (e.g., "Bathroom Renovation")
+- Templates composed of previously defined works
+- New works can be added directly from template creation view
+- Users can view, edit, add, and delete their templates
+
+#### 2.4 Cost Estimates
+- Create estimates for clients using renovation templates
+- One estimate can contain multiple templates
+- Estimates include: investor data, address, material cost, labor cost
+- Optional: notes, validity date, start date
+- Discounts can be applied separately to materials and labor
+- Users can view, edit, add, and delete their estimates
+
+#### 2.5 Company Data
+- Users can define: company name, email, phone number
+- This data is used in generated estimates
+
+#### 2.6 Administrator Role
+- Special administrator user can:
+  - View estimates, works, and templates from all users
+  - View registered users
+  - Add and delete users
+
+### 3. Code Quality Requirements
+
+- Clean Code principles (naming, class/method length)
+- SOLID principles
+- Test coverage: unit, component, and integration tests
+- All naming in English
+- Trunk-based development
+- Small commits (max 255 characters)
+
+### 4. Security
+
+- Passwords hashed with bcrypt
+- Protection against XSS and CSRF attacks
+- Rate limiting for login attempts (account lockout)
+- Regular security audits
+- Sensitive data encryption
+- JWT tokens for authentication
+
+### 5. Architecture
+
+- Clean Architecture with Domain-Driven Design
+- Reactive programming with Spring WebFlux
+- Use cases extracted to domain layer
+- Virtual Threads (Project Loom) enabled
+- MongoDB for persistence
+
+### 6. Notes
+
+- PDF generation moved to frontend
+- Demo mode removed (will be frontend-only feature)
+- Focus on backend business logic and API endpoints
+

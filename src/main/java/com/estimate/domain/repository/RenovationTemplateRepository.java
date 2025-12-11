@@ -1,15 +1,15 @@
 package com.estimate.domain.repository;
 
 import com.estimate.domain.model.RenovationTemplate;
-import org.springframework.data.mongodb.repository.MongoRepository;
+import org.springframework.data.mongodb.repository.ReactiveMongoRepository;
 import org.springframework.stereotype.Repository;
-
-import java.util.List;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
 @Repository
-public interface RenovationTemplateRepository extends MongoRepository<RenovationTemplate, String> {
+public interface RenovationTemplateRepository extends ReactiveMongoRepository<RenovationTemplate, String> {
     
-    List<RenovationTemplate> findByUserId(String userId);
+    Flux<RenovationTemplate> findByUserId(String userId);
     
-    void deleteByUserId(String userId);
+    Mono<Void> deleteByUserId(String userId);
 }

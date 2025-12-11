@@ -8,8 +8,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-
-import java.util.List;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
 @Slf4j
 @Service
@@ -19,57 +19,54 @@ public class UserService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     
-    public UserResponse getCurrentUser(String userId) {
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new IllegalArgumentException("User not found"));
-        
-        return toResponse(user);
-    }
-    
-    public UserResponse updateUser(String userId, UpdateUserRequest request) {
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new IllegalArgumentException("User not found"));
-        
-        if (request.getCompanyName() != null) {
-            user.setCompanyName(request.getCompanyName());
-        }
-        
-        if (request.getPhone() != null) {
-            user.setPhone(request.getPhone());
-        }
-        
-        if (request.getNewPassword() != null) {
-            if (request.getCurrentPassword() == null) {
-                throw new IllegalArgumentException("Current password is required to change password");
-            }
-            if (!passwordEncoder.matches(request.getCurrentPassword(), user.getPasswordHash())) {
-                throw new IllegalArgumentException("Current password is incorrect");
-            }
-            user.setPasswordHash(passwordEncoder.encode(request.getNewPassword()));
-            log.info("Password changed for user: {}", user.getEmail());
-        }
-        
-        user = userRepository.save(user);
-        log.info("User updated: {}", user.getEmail());
-        
-        return toResponse(user);
-    }
-    
-    public void deleteUser(String userId) {
-        userRepository.deleteById(userId);
-        log.info("User deleted: {}", userId);
-    }
-    
-    // Admin methods
-    public List<UserResponse> getAllUsers() {
-        return userRepository.findAll().stream()
+    public Mono<UserResponse> getCurrentUser(String userId) {
+        return userRepository.findById(userId)
                 .map(this::toResponse)
-                .toList();
+                .switchIfEmpty(Mono.error(new IllegalArgumentException("User not found")));
     }
     
-    public void deleteUserAsAdmin(String userId) {
-        userRepository.deleteById(userId);
-        log.info("User deleted by admin: {}", userId);
+    public Mono<UserResponse> updateUser(String userId, UpdateUserRequest request) {
+        return userRepository.findById(userId)
+                .switchIfEmpty(Mono.error(new IllegalArgumentException("User not found")))
+                .flatMap(user -> {
+                    if (request.getCompanyName() != null) {
+                        user.setCompanyName(request.getCompanyName());
+                    }
+                    
+                    if (request.getPhone() != null) {
+                        user.setPhone(request.getPhone());
+                    }
+                    
+                    if (request.getNewPassword() != null) {
+                        if (request.getCurrentPassword() == null) {
+                            return Mono.error(new IllegalArgumentException("Current password is required to change password"));
+                        }
+                        if (!passwordEncoder.matches(request.getCurrentPassword(), user.getPasswordHash())) {
+                            return Mono.error(new IllegalArgumentException("Current password is incorrect"));
+                        }
+                        user.setPasswordHash(passwordEncoder.encode(request.getNewPassword()));
+                        log.info("Password changed for user: {}", user.getEmail());
+                    }
+                    
+                    return userRepository.save(user);
+                })
+                .doOnNext(user -> log.info("User updated: {}", user.getEmail()))
+                .map(this::toResponse);
+    }
+    
+    public Mono<Void> deleteUser(String userId) {
+        return userRepository.deleteById(userId)
+                .doOnSuccess(v -> log.info("User deleted: {}", userId));
+    }
+    
+    public Flux<UserResponse> getAllUsers() {
+        return userRepository.findAll()
+                .map(this::toResponse);
+    }
+    
+    public Mono<Void> deleteUserAsAdmin(String userId) {
+        return userRepository.deleteById(userId)
+                .doOnSuccess(v -> log.info("User deleted by admin: {}", userId));
     }
     
     private UserResponse toResponse(User user) {

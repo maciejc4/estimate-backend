@@ -7,9 +7,10 @@ import com.estimate.domain.repository.WorkRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
 import java.util.ArrayList;
-import java.util.List;
 
 @Slf4j
 @Service
@@ -18,21 +19,19 @@ public class WorkService {
     
     private final WorkRepository workRepository;
     
-    public List<WorkResponse> getUserWorks(String userId) {
-        return workRepository.findByUserId(userId).stream()
-                .map(this::toResponse)
-                .toList();
+    public Flux<WorkResponse> getUserWorks(String userId) {
+        return workRepository.findByUserId(userId)
+                .map(this::toResponse);
     }
     
-    public WorkResponse getWork(String userId, String workId) {
-        Work work = workRepository.findById(workId)
+    public Mono<WorkResponse> getWork(String userId, String workId) {
+        return workRepository.findById(workId)
                 .filter(w -> w.getUserId().equals(userId))
-                .orElseThrow(() -> new IllegalArgumentException("Work not found"));
-        
-        return toResponse(work);
+                .map(this::toResponse)
+                .switchIfEmpty(Mono.error(new IllegalArgumentException("Work not found")));
     }
     
-    public WorkResponse createWork(String userId, WorkRequest request) {
+    public Mono<WorkResponse> createWork(String userId, WorkRequest request) {
         Work work = Work.builder()
                 .userId(userId)
                 .name(request.getName())
@@ -40,41 +39,37 @@ public class WorkService {
                 .materials(request.getMaterials() != null ? request.getMaterials() : new ArrayList<>())
                 .build();
         
-        work = workRepository.save(work);
-        log.info("Work created: {} for user: {}", work.getName(), userId);
-        
-        return toResponse(work);
+        return workRepository.save(work)
+                .doOnNext(saved -> log.info("Work created: {} for user: {}", saved.getName(), userId))
+                .map(this::toResponse);
     }
     
-    public WorkResponse updateWork(String userId, String workId, WorkRequest request) {
-        Work work = workRepository.findById(workId)
+    public Mono<WorkResponse> updateWork(String userId, String workId, WorkRequest request) {
+        return workRepository.findById(workId)
                 .filter(w -> w.getUserId().equals(userId))
-                .orElseThrow(() -> new IllegalArgumentException("Work not found"));
-        
-        work.setName(request.getName());
-        work.setUnit(request.getUnit());
-        work.setMaterials(request.getMaterials() != null ? request.getMaterials() : new ArrayList<>());
-        
-        work = workRepository.save(work);
-        log.info("Work updated: {} for user: {}", work.getName(), userId);
-        
-        return toResponse(work);
+                .switchIfEmpty(Mono.error(new IllegalArgumentException("Work not found")))
+                .flatMap(work -> {
+                    work.setName(request.getName());
+                    work.setUnit(request.getUnit());
+                    work.setMaterials(request.getMaterials() != null ? request.getMaterials() : new ArrayList<>());
+                    
+                    return workRepository.save(work);
+                })
+                .doOnNext(saved -> log.info("Work updated: {} for user: {}", saved.getName(), userId))
+                .map(this::toResponse);
     }
     
-    public void deleteWork(String userId, String workId) {
-        Work work = workRepository.findById(workId)
+    public Mono<Void> deleteWork(String userId, String workId) {
+        return workRepository.findById(workId)
                 .filter(w -> w.getUserId().equals(userId))
-                .orElseThrow(() -> new IllegalArgumentException("Work not found"));
-        
-        workRepository.delete(work);
-        log.info("Work deleted: {} for user: {}", workId, userId);
+                .switchIfEmpty(Mono.error(new IllegalArgumentException("Work not found")))
+                .flatMap(work -> workRepository.delete(work)
+                        .doOnSuccess(v -> log.info("Work deleted: {} for user: {}", workId, userId)));
     }
     
-    // Admin methods
-    public List<WorkResponse> getAllWorks() {
-        return workRepository.findAll().stream()
-                .map(this::toResponse)
-                .toList();
+    public Flux<WorkResponse> getAllWorks() {
+        return workRepository.findAll()
+                .map(this::toResponse);
     }
     
     private WorkResponse toResponse(Work work) {

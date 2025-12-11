@@ -7,10 +7,11 @@ import com.estimate.domain.repository.EstimateRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
-import java.util.List;
 
 @Slf4j
 @Service
@@ -19,21 +20,19 @@ public class EstimateService {
     
     private final EstimateRepository estimateRepository;
     
-    public List<EstimateResponse> getUserEstimates(String userId) {
-        return estimateRepository.findByUserId(userId).stream()
-                .map(this::toResponse)
-                .toList();
+    public Flux<EstimateResponse> getUserEstimates(String userId) {
+        return estimateRepository.findByUserId(userId)
+                .map(this::toResponse);
     }
     
-    public EstimateResponse getEstimate(String userId, String estimateId) {
-        Estimate estimate = estimateRepository.findById(estimateId)
+    public Mono<EstimateResponse> getEstimate(String userId, String estimateId) {
+        return estimateRepository.findById(estimateId)
                 .filter(e -> e.getUserId().equals(userId))
-                .orElseThrow(() -> new IllegalArgumentException("Estimate not found"));
-        
-        return toResponse(estimate);
+                .map(this::toResponse)
+                .switchIfEmpty(Mono.error(new IllegalArgumentException("Estimate not found")));
     }
     
-    public EstimateResponse createEstimate(String userId, EstimateRequest request) {
+    public Mono<EstimateResponse> createEstimate(String userId, EstimateRequest request) {
         Estimate estimate = Estimate.builder()
                 .userId(userId)
                 .investorName(request.getInvestorName())
@@ -47,53 +46,43 @@ public class EstimateService {
                 .startDate(request.getStartDate())
                 .build();
         
-        estimate = estimateRepository.save(estimate);
-        log.info("Estimate created for investor: {} by user: {}", estimate.getInvestorName(), userId);
-        
-        return toResponse(estimate);
+        return estimateRepository.save(estimate)
+                .doOnNext(saved -> log.info("Estimate created for investor: {} by user: {}", saved.getInvestorName(), userId))
+                .map(this::toResponse);
     }
     
-    public EstimateResponse updateEstimate(String userId, String estimateId, EstimateRequest request) {
-        Estimate estimate = estimateRepository.findById(estimateId)
-                .filter(e -> e.getUserId().equals(userId))
-                .orElseThrow(() -> new IllegalArgumentException("Estimate not found"));
-        
-        estimate.setInvestorName(request.getInvestorName());
-        estimate.setInvestorAddress(request.getInvestorAddress());
-        estimate.setTemplateIds(request.getTemplateIds() != null ? request.getTemplateIds() : new ArrayList<>());
-        estimate.setWorkItems(request.getWorkItems() != null ? request.getWorkItems() : new ArrayList<>());
-        estimate.setMaterialDiscount(request.getMaterialDiscount() != null ? request.getMaterialDiscount() : BigDecimal.ZERO);
-        estimate.setLaborDiscount(request.getLaborDiscount() != null ? request.getLaborDiscount() : BigDecimal.ZERO);
-        estimate.setNotes(request.getNotes());
-        estimate.setValidUntil(request.getValidUntil());
-        estimate.setStartDate(request.getStartDate());
-        
-        estimate = estimateRepository.save(estimate);
-        log.info("Estimate updated for investor: {} by user: {}", estimate.getInvestorName(), userId);
-        
-        return toResponse(estimate);
-    }
-    
-    public void deleteEstimate(String userId, String estimateId) {
-        Estimate estimate = estimateRepository.findById(estimateId)
-                .filter(e -> e.getUserId().equals(userId))
-                .orElseThrow(() -> new IllegalArgumentException("Estimate not found"));
-        
-        estimateRepository.delete(estimate);
-        log.info("Estimate deleted: {} for user: {}", estimateId, userId);
-    }
-    
-    // Admin methods
-    public List<EstimateResponse> getAllEstimates() {
-        return estimateRepository.findAll().stream()
-                .map(this::toResponse)
-                .toList();
-    }
-    
-    public Estimate getEstimateEntity(String userId, String estimateId) {
+    public Mono<EstimateResponse> updateEstimate(String userId, String estimateId, EstimateRequest request) {
         return estimateRepository.findById(estimateId)
                 .filter(e -> e.getUserId().equals(userId))
-                .orElseThrow(() -> new IllegalArgumentException("Estimate not found"));
+                .switchIfEmpty(Mono.error(new IllegalArgumentException("Estimate not found")))
+                .flatMap(estimate -> {
+                    estimate.setInvestorName(request.getInvestorName());
+                    estimate.setInvestorAddress(request.getInvestorAddress());
+                    estimate.setTemplateIds(request.getTemplateIds() != null ? request.getTemplateIds() : new ArrayList<>());
+                    estimate.setWorkItems(request.getWorkItems() != null ? request.getWorkItems() : new ArrayList<>());
+                    estimate.setMaterialDiscount(request.getMaterialDiscount() != null ? request.getMaterialDiscount() : BigDecimal.ZERO);
+                    estimate.setLaborDiscount(request.getLaborDiscount() != null ? request.getLaborDiscount() : BigDecimal.ZERO);
+                    estimate.setNotes(request.getNotes());
+                    estimate.setValidUntil(request.getValidUntil());
+                    estimate.setStartDate(request.getStartDate());
+                    
+                    return estimateRepository.save(estimate);
+                })
+                .doOnNext(saved -> log.info("Estimate updated for investor: {} by user: {}", saved.getInvestorName(), userId))
+                .map(this::toResponse);
+    }
+    
+    public Mono<Void> deleteEstimate(String userId, String estimateId) {
+        return estimateRepository.findById(estimateId)
+                .filter(e -> e.getUserId().equals(userId))
+                .switchIfEmpty(Mono.error(new IllegalArgumentException("Estimate not found")))
+                .flatMap(estimate -> estimateRepository.delete(estimate)
+                        .doOnSuccess(v -> log.info("Estimate deleted: {} for user: {}", estimateId, userId)));
+    }
+    
+    public Flux<EstimateResponse> getAllEstimates() {
+        return estimateRepository.findAll()
+                .map(this::toResponse);
     }
     
     private EstimateResponse toResponse(Estimate estimate) {
