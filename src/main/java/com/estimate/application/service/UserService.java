@@ -28,28 +28,7 @@ public class UserService {
     public Mono<UserResponse> updateUser(String userId, UpdateUserRequest request) {
         return userRepository.findById(userId)
                 .switchIfEmpty(Mono.error(new IllegalArgumentException("User not found")))
-                .flatMap(user -> {
-                    if (request.getCompanyName() != null) {
-                        user.setCompanyName(request.getCompanyName());
-                    }
-                    
-                    if (request.getPhone() != null) {
-                        user.setPhone(request.getPhone());
-                    }
-                    
-                    if (request.getNewPassword() != null) {
-                        if (request.getCurrentPassword() == null) {
-                            return Mono.error(new IllegalArgumentException("Current password is required to change password"));
-                        }
-                        if (!passwordEncoder.matches(request.getCurrentPassword(), user.getPasswordHash())) {
-                            return Mono.error(new IllegalArgumentException("Current password is incorrect"));
-                        }
-                        user.setPasswordHash(passwordEncoder.encode(request.getNewPassword()));
-                        log.info("Password changed for user: {}", user.getEmail());
-                    }
-                    
-                    return userRepository.save(user);
-                })
+                .flatMap(user -> updateUserFields(user, request))
                 .doOnNext(user -> log.info("User updated: {}", user.getEmail()))
                 .map(this::toResponse);
     }
@@ -67,6 +46,37 @@ public class UserService {
     public Mono<Void> deleteUserAsAdmin(String userId) {
         return userRepository.deleteById(userId)
                 .doOnSuccess(v -> log.info("User deleted by admin: {}", userId));
+    }
+    
+    private Mono<User> updateUserFields(User user, UpdateUserRequest request) {
+        if (request.getCompanyName() != null) {
+            user.setCompanyName(request.getCompanyName());
+        }
+        
+        if (request.getPhone() != null) {
+            user.setPhone(request.getPhone());
+        }
+        
+        if (request.getNewPassword() != null) {
+            return updatePassword(user, request);
+        }
+        
+        return userRepository.save(user);
+    }
+    
+    private Mono<User> updatePassword(User user, UpdateUserRequest request) {
+        if (request.getCurrentPassword() == null) {
+            return Mono.error(new IllegalArgumentException("Current password is required to change password"));
+        }
+        
+        if (!passwordEncoder.matches(request.getCurrentPassword(), user.getPasswordHash())) {
+            return Mono.error(new IllegalArgumentException("Current password is incorrect"));
+        }
+        
+        user.setPasswordHash(passwordEncoder.encode(request.getNewPassword()));
+        log.info("Password changed for user: {}", user.getEmail());
+        
+        return userRepository.save(user);
     }
     
     private UserResponse toResponse(User user) {

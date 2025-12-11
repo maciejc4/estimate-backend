@@ -13,6 +13,7 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.util.ArrayList;
+import java.util.List;
 
 @Slf4j
 @Service
@@ -28,18 +29,12 @@ public class RenovationTemplateService {
     }
     
     public Mono<RenovationTemplateResponse> getTemplate(String userId, String templateId) {
-        return templateRepository.findById(templateId)
-                .filter(t -> t.getUserId().equals(userId))
-                .switchIfEmpty(Mono.error(new IllegalArgumentException("Template not found")))
+        return findUserTemplate(userId, templateId)
                 .flatMap(t -> toResponse(t, userId));
     }
     
     public Mono<RenovationTemplateResponse> createTemplate(String userId, RenovationTemplateRequest request) {
-        RenovationTemplate template = RenovationTemplate.builder()
-                .userId(userId)
-                .name(request.getName())
-                .workIds(request.getWorkIds() != null ? request.getWorkIds() : new ArrayList<>())
-                .build();
+        RenovationTemplate template = buildTemplate(userId, request);
         
         return templateRepository.save(template)
                 .doOnNext(saved -> log.info("Template created: {} for user: {}", saved.getName(), userId))
@@ -47,13 +42,9 @@ public class RenovationTemplateService {
     }
     
     public Mono<RenovationTemplateResponse> updateTemplate(String userId, String templateId, RenovationTemplateRequest request) {
-        return templateRepository.findById(templateId)
-                .filter(t -> t.getUserId().equals(userId))
-                .switchIfEmpty(Mono.error(new IllegalArgumentException("Template not found")))
+        return findUserTemplate(userId, templateId)
                 .flatMap(template -> {
-                    template.setName(request.getName());
-                    template.setWorkIds(request.getWorkIds() != null ? request.getWorkIds() : new ArrayList<>());
-                    
+                    updateTemplateFields(template, request);
                     return templateRepository.save(template);
                 })
                 .doOnNext(saved -> log.info("Template updated: {} for user: {}", saved.getName(), userId))
@@ -61,9 +52,7 @@ public class RenovationTemplateService {
     }
     
     public Mono<Void> deleteTemplate(String userId, String templateId) {
-        return templateRepository.findById(templateId)
-                .filter(t -> t.getUserId().equals(userId))
-                .switchIfEmpty(Mono.error(new IllegalArgumentException("Template not found")))
+        return findUserTemplate(userId, templateId)
                 .flatMap(template -> templateRepository.delete(template)
                         .doOnSuccess(v -> log.info("Template deleted: {} for user: {}", templateId, userId)));
     }
@@ -73,25 +62,48 @@ public class RenovationTemplateService {
                 .map(this::toResponseWithoutWorks);
     }
     
+    private Mono<RenovationTemplate> findUserTemplate(String userId, String templateId) {
+        return templateRepository.findById(templateId)
+                .filter(t -> t.getUserId().equals(userId))
+                .switchIfEmpty(Mono.error(new IllegalArgumentException("Template not found")));
+    }
+    
+    private RenovationTemplate buildTemplate(String userId, RenovationTemplateRequest request) {
+        return RenovationTemplate.builder()
+                .userId(userId)
+                .name(request.getName())
+                .workIds(request.getWorkIds() != null ? request.getWorkIds() : new ArrayList<>())
+                .build();
+    }
+    
+    private void updateTemplateFields(RenovationTemplate template, RenovationTemplateRequest request) {
+        template.setName(request.getName());
+        template.setWorkIds(request.getWorkIds() != null ? request.getWorkIds() : new ArrayList<>());
+    }
+    
     private Mono<RenovationTemplateResponse> toResponse(RenovationTemplate template, String userId) {
         if (template.getWorkIds() == null || template.getWorkIds().isEmpty()) {
             return Mono.just(buildResponse(template, new ArrayList<>()));
         }
         
         return workRepository.findByUserIdAndIdIn(userId, template.getWorkIds())
-                .map(w -> WorkResponse.builder()
-                        .id(w.getId())
-                        .name(w.getName())
-                        .unit(w.getUnit())
-                        .materials(w.getMaterials())
-                        .createdAt(w.getCreatedAt())
-                        .updatedAt(w.getUpdatedAt())
-                        .build())
+                .map(this::toWorkResponse)
                 .collectList()
                 .map(works -> buildResponse(template, works));
     }
     
-    private RenovationTemplateResponse buildResponse(RenovationTemplate template, java.util.List<WorkResponse> works) {
+    private WorkResponse toWorkResponse(com.estimate.domain.model.Work work) {
+        return WorkResponse.builder()
+                .id(work.getId())
+                .name(work.getName())
+                .unit(work.getUnit())
+                .materials(work.getMaterials())
+                .createdAt(work.getCreatedAt())
+                .updatedAt(work.getUpdatedAt())
+                .build();
+    }
+    
+    private RenovationTemplateResponse buildResponse(RenovationTemplate template, List<WorkResponse> works) {
         return RenovationTemplateResponse.builder()
                 .id(template.getId())
                 .name(template.getName())
