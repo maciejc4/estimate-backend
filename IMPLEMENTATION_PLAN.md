@@ -43,18 +43,19 @@ System składa się z dwóch aplikacji:
 ---
 
 ### Faza 2: Backend — Autentykacja i użytkownicy
-**Status:** ⬜ Do zrobienia
+**Status:** ✅ Zrobione
 
 | Krok | Opis | Status |
 |------|------|--------|
-| 2.1 | Model User (id, email, passwordHash, role, companyName, phone) | ⬜ |
-| 2.2 | UserRepository (MongoDB) | ⬜ |
-| 2.3 | UserService (rejestracja, logowanie, zmiana hasła, usuwanie) | ⬜ |
-| 2.4 | Haszowanie haseł (BCrypt/Argon2) | ⬜ |
-| 2.5 | JWT Authentication (Spring Security) | ⬜ |
-| 2.6 | Rate limiting dla logowania | ⬜ |
-| 2.7 | Endpointy: POST /auth/register, POST /auth/login, PUT /users/password, DELETE /users | ⬜ |
-| 2.8 | Testy jednostkowe i integracyjne (Spock, Testcontainers) | ⬜ |
+| 2.1 | Model User (id, email, passwordHash, role, companyName, phone) | ✅ |
+| 2.2 | UserRepository (MongoDB) | ✅ |
+| 2.3 | UserService (rejestracja, logowanie, zmiana hasła, usuwanie) | ✅ |
+| 2.4 | Haszowanie haseł (BCrypt/Argon2) | ✅ |
+| 2.5 | JWT Authentication (Spring Security) | ✅ |
+| 2.6 | Rate limiting dla logowania | ⬜ Do zrobienia |
+| 2.7 | Endpointy: POST /auth/register, POST /auth/login, PUT /users/password, DELETE /users | ✅ |
+| 2.8 | Testy jednostkowe i integracyjne (Spock, Testcontainers) | ⬜ Do zrobienia |
+| 2.9 | Generowanie przykładowych danych przy rejestracji | 🔄 W trakcie |
 
 ---
 
@@ -126,17 +127,19 @@ System składa się z dwóch aplikacji:
 ---
 
 ### Faza 8: Frontend — Fundament
-**Status:** ✅ Zrobione
+**Status:** 🔄 W trakcie
 
 | Krok | Opis | Status |
 |------|------|--------|
 | 8.1 | Inicjalizacja Next.js 14+ z App Router | ✅ |
 | 8.2 | Konfiguracja TypeScript, Tailwind CSS | ✅ |
-| 8.3 | Konfiguracja i18n (next-intl) | ⬜ W trakcie |
-| 8.4 | Neumorphism theme (Tailwind config) | ⬜ W trakcie |
-| 8.5 | Layout główny, nawigacja | ⬜ W trakcie |
+| 8.3 | Konfiguracja i18n (next-intl) | ⬜ Do zrobienia |
+| 8.4 | Nowoczesny, jasny motyw (Soft UI) | 🔄 W trakcie |
+| 8.5 | Layout główny, nawigacja | 🔄 W trakcie |
 | 8.6 | Dockerfile dla frontend | ✅ |
 | 8.7 | README z instrukcją | ✅ |
+| 8.8 | Wyszukiwanie i filtrowanie | 🔄 W trakcie |
+| 8.9 | Widoki listowe jako domyślne | 🔄 W trakcie |
 
 ---
 
@@ -155,41 +158,47 @@ System składa się z dwóch aplikacji:
 ---
 
 ### Faza 10: Frontend — Prace
-**Status:** ⬜ Do zrobienia
+**Status:** 🔄 W trakcie
 
-| Krok | Opis | Status |
+| Krop | Opis | Status |
 |------|------|--------|
-| 10.1 | Lista prac (/works) | ⬜ |
-| 10.2 | Formularz tworzenia/edycji pracy | ⬜ |
-| 10.3 | Dodawanie materiałów do pracy | ⬜ |
-| 10.4 | Usuwanie pracy | ⬜ |
+| 10.1 | Lista prac (/works) z widokiem listowym | 🔄 W trakcie |
+| 10.2 | Formularz tworzenia/edycji pracy | ✅ |
+| 10.3 | Dodawanie materiałów do pracy | ✅ |
+| 10.4 | Usuwanie pracy | ✅ |
+| 10.5 | Wyszukiwanie i filtrowanie prac | 🔄 W trakcie |
+| 10.6 | Sortowanie (nazwa, data utworzenia, jednostka) | 🔄 W trakcie |
 
 ---
 
 ### Faza 11: Frontend — Szablony
-**Status:** ⬜ Do zrobienia
+**Status:** 🔄 W trakcie
 
 | Krok | Opis | Status |
 |------|------|--------|
-| 11.1 | Lista szablonów (/templates) | ⬜ |
-| 11.2 | Formularz tworzenia/edycji szablonu | ⬜ |
-| 11.3 | Wybór prac do szablonu | ⬜ |
-| 11.4 | Dodawanie nowej pracy z poziomu szablonu | ⬜ |
+| 11.1 | Lista szablonów (/templates) z widokiem listowym | 🔄 W trakcie |
+| 11.2 | Formularz tworzenia/edycji szablonu | ✅ |
+| 11.3 | Wybór prac do szablonu | ✅ |
+| 11.4 | Dodawanie nowej pracy z poziomu szablonu | ✅ |
+| 11.5 | Wyszukiwanie i filtrowanie szablonów | 🔄 W trakcie |
+| 11.6 | Sortowanie szablonów | 🔄 W trakcie |
 
 ---
 
 ### Faza 12: Frontend — Kosztorysy
-**Status:** ⬜ Do zrobienia
+**Status:** 🔄 W trakcie
 
 | Krok | Opis | Status |
 |------|------|--------|
-| 12.1 | Lista kosztorysów (/estimates) | ⬜ |
-| 12.2 | Formularz tworzenia kosztorysu | ⬜ |
-| 12.3 | Wybór szablonów i prac | ⬜ |
-| 12.4 | Kalkulator kosztów (materiały, robocizna, rabaty) | ⬜ |
-| 12.5 | Podgląd i edycja kosztorysu | ⬜ |
-| 12.6 | Generowanie i pobieranie PDF | ⬜ |
-| 12.7 | Konfiguracja szczegółowości PDF | ⬜ |
+| 12.1 | Lista kosztorysów (/estimates) z widokiem listowym | 🔄 W trakcie |
+| 12.2 | Formularz tworzenia kosztorysu | ✅ |
+| 12.3 | Wybór szablonów i prac | ✅ |
+| 12.4 | Kalkulator kosztów (materiały, robocizna, rabaty) | ✅ |
+| 12.5 | Podgląd i edycja kosztorysu | ✅ |
+| 12.6 | Generowanie i pobieranie PDF | ✅ |
+| 12.7 | Konfiguracja szczegółowości PDF | ✅ |
+| 12.8 | Wyszukiwanie i filtrowanie kosztorysów | 🔄 W trakcie |
+| 12.9 | Sortowanie (data, klient, wartość) | 🔄 W trakcie |
 
 ---
 
