@@ -10,4 +10,6 @@ import java.util.List;
 public interface RenovationTemplateRepository extends MongoRepository<RenovationTemplate, String> {
     
     List<RenovationTemplate> findByUserId(String userId);
+    
+    void deleteByUserId(String userId);
 }

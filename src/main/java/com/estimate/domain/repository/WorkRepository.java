@@ -12,4 +12,6 @@ public interface WorkRepository extends MongoRepository<Work, String> {
     List<Work> findByUserId(String userId);
     
     List<Work> findByUserIdAndIdIn(String userId, List<String> ids);
+    
+    void deleteByUserId(String userId);
 }

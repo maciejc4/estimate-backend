@@ -10,4 +10,6 @@ import java.util.List;
 public interface EstimateRepository extends MongoRepository<Estimate, String> {
     
     List<Estimate> findByUserId(String userId);
+    
+    void deleteByUserId(String userId);
 }
