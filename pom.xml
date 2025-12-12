@@ -94,6 +94,13 @@
 			<scope>runtime</scope>
 		</dependency>
 
+		<!-- Firebase Admin SDK for GCP Identity Platform -->
+		<dependency>
+			<groupId>com.google.firebase</groupId>
+			<artifactId>firebase-admin</artifactId>
+			<version>9.3.0</version>
+		</dependency>
+
 		<!-- Embedded MongoDB for development/testing -->
 		<dependency>
 			<groupId>de.flapdoodle.embed</groupId>

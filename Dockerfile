@@ -23,4 +23,7 @@ HEALTHCHECK --interval=30s --timeout=3s --start-period=60s --retries=3 \
 
 EXPOSE 8080
 
+# Default to jwt profile, can be overridden via SPRING_PROFILES_ACTIVE env variable
+ENV SPRING_PROFILES_ACTIVE=jwt
+
 ENTRYPOINT ["java", "-XX:+UseContainerSupport", "-XX:MaxRAMPercentage=75.0", "-jar", "app.jar"]

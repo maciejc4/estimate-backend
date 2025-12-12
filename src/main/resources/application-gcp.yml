@@ -1,0 +1,11 @@
+# GCP Identity Platform Profile Configuration
+
+auth:
+  provider: gcp
+
+# GCP Configuration
+app:
+  gcp:
+    project-id: ${GCP_PROJECT_ID}
+    firebase:
+      credentials-path: ${GOOGLE_APPLICATION_CREDENTIALS:}
