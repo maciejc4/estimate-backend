@@ -1,4 +1,4 @@
-package com.estimate.application.dto;
+package com.estimate.adapter.in.web.auth.dto;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
