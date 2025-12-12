@@ -1,13 +1,11 @@
 package com.estimate.application.usecase.auth;
 
-import com.estimate.domain.exception.EmailAlreadyExistsException;
-import com.estimate.domain.model.User;
+import com.estimate.domain.model.AuthenticationResult;
+import com.estimate.domain.model.RegisterUserData;
 import com.estimate.domain.port.in.auth.AuthResult;
 import com.estimate.domain.port.in.auth.RegisterUserCommand;
 import com.estimate.domain.port.in.auth.RegisterUserUseCase;
-import com.estimate.domain.port.out.JwtProviderPort;
-import com.estimate.domain.port.out.PasswordEncoderPort;
-import com.estimate.domain.port.out.UserRepositoryPort;
+import com.estimate.domain.port.out.AuthenticationProviderPort;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -18,39 +16,28 @@ import reactor.core.publisher.Mono;
 @RequiredArgsConstructor
 public class RegisterUserService implements RegisterUserUseCase {
     
-    private final UserRepositoryPort userRepository;
-    private final PasswordEncoderPort passwordEncoder;
-    private final JwtProviderPort jwtProvider;
+    private final AuthenticationProviderPort authenticationProvider;
     
     @Override
     public Mono<AuthResult> register(RegisterUserCommand command) {
-        return userRepository.existsByEmail(command.getEmail())
-                .flatMap(exists -> {
-                    if (exists) {
-                        return Mono.error(new EmailAlreadyExistsException(command.getEmail()));
-                    }
-                    
-                    User user = User.builder()
-                            .email(command.getEmail())
-                            .passwordHash(passwordEncoder.encode(command.getPassword()))
-                            .companyName(command.getCompanyName())
-                            .phone(command.getPhone())
-                            .role(User.Role.USER)
-                            .build();
-                    
-                    return userRepository.save(user);
-                })
-                .doOnNext(user -> log.info("User registered: {}", user.getEmail()))
-                .map(this::buildAuthResult);
+        RegisterUserData userData = RegisterUserData.builder()
+                .email(command.getEmail())
+                .password(command.getPassword())
+                .companyName(command.getCompanyName())
+                .phone(command.getPhone())
+                .build();
+        
+        return authenticationProvider.registerUser(userData)
+                .doOnNext(result -> log.info("User registered: {}", result.getEmail()))
+                .map(this::toAuthResult);
     }
     
-    private AuthResult buildAuthResult(User user) {
-        String token = jwtProvider.generateToken(user);
+    private AuthResult toAuthResult(AuthenticationResult result) {
         return AuthResult.builder()
-                .token(token)
-                .userId(user.getId())
-                .email(user.getEmail())
-                .role(user.getRole().name())
+                .token(result.getToken())
+                .userId(result.getUserId())
+                .email(result.getEmail())
+                .role(result.getRole())
                 .build();
     }
 }
