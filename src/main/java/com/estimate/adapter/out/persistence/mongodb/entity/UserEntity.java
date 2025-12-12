@@ -1,9 +1,14 @@
-package com.estimate.domain.model;
+package com.estimate.adapter.out.persistence.mongodb.entity;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.annotation.LastModifiedDate;
+import org.springframework.data.mongodb.core.index.Indexed;
+import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.time.Instant;
 
@@ -11,39 +16,36 @@ import java.time.Instant;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class User {
+@Document(collection = "users")
+public class UserEntity {
     
+    @Id
     private String id;
+    
+    @Indexed(unique = true)
     private String email;
+    
     private String passwordHash;
+    
     @Builder.Default
     private Role role = Role.USER;
+    
     private String companyName;
+    
     private String phone;
+    
     @Builder.Default
     private int failedLoginAttempts = 0;
+    
     private Instant lockedUntil;
+    
+    @CreatedDate
     private Instant createdAt;
+    
+    @LastModifiedDate
     private Instant updatedAt;
     
     public enum Role {
         USER, ADMIN
-    }
-    
-    public boolean isLocked() {
-        return lockedUntil != null && Instant.now().isBefore(lockedUntil);
-    }
-    
-    public void incrementFailedLoginAttempts() {
-        this.failedLoginAttempts++;
-    }
-    
-    public void resetFailedLoginAttempts() {
-        this.failedLoginAttempts = 0;
-        this.lockedUntil = null;
-    }
-    
-    public void lockAccount(Instant until) {
-        this.lockedUntil = until;
     }
 }

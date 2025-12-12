@@ -4,11 +4,6 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.springframework.data.annotation.CreatedDate;
-import org.springframework.data.annotation.Id;
-import org.springframework.data.annotation.LastModifiedDate;
-import org.springframework.data.mongodb.core.index.Indexed;
-import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.time.Instant;
 import java.util.ArrayList;
@@ -18,23 +13,26 @@ import java.util.List;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Document(collection = "renovation_templates")
 public class RenovationTemplate {
     
-    @Id
     private String id;
-    
-    @Indexed
     private String userId;
-    
     private String name;
-    
     @Builder.Default
     private List<String> workIds = new ArrayList<>();
-    
-    @CreatedDate
     private Instant createdAt;
-    
-    @LastModifiedDate
     private Instant updatedAt;
+    
+    public void addWork(String workId) {
+        if (this.workIds == null) {
+            this.workIds = new ArrayList<>();
+        }
+        this.workIds.add(workId);
+    }
+    
+    public void removeWork(String workId) {
+        if (this.workIds != null) {
+            this.workIds.remove(workId);
+        }
+    }
 }

@@ -14,8 +14,6 @@ import java.math.BigDecimal;
 public class Material {
     
     private String name;
-    
     private String unit;
-    
     private BigDecimal consumptionPerWorkUnit;
 }

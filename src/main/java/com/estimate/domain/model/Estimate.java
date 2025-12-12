@@ -4,11 +4,6 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.springframework.data.annotation.CreatedDate;
-import org.springframework.data.annotation.Id;
-import org.springframework.data.annotation.LastModifiedDate;
-import org.springframework.data.mongodb.core.index.Indexed;
-import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -21,41 +16,24 @@ import java.util.List;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Document(collection = "estimates")
 public class Estimate {
     
-    @Id
     private String id;
-    
-    @Indexed
     private String userId;
-    
     private String investorName;
-    
     private String investorAddress;
-    
     @Builder.Default
     private List<String> templateIds = new ArrayList<>();
-    
     @Builder.Default
     private List<EstimateWorkItem> workItems = new ArrayList<>();
-    
     @Builder.Default
     private BigDecimal materialDiscount = BigDecimal.ZERO;
-    
     @Builder.Default
     private BigDecimal laborDiscount = BigDecimal.ZERO;
-    
     private String notes;
-    
     private LocalDate validUntil;
-    
     private LocalDate startDate;
-    
-    @CreatedDate
     private Instant createdAt;
-    
-    @LastModifiedDate
     private Instant updatedAt;
     
     public BigDecimal calculateMaterialCost() {
@@ -100,5 +78,20 @@ public class Estimate {
     
     public BigDecimal calculateTotalCost() {
         return calculateMaterialCostWithDiscount().add(calculateLaborCostWithDiscount());
+    }
+    
+    public void addWorkItem(EstimateWorkItem item) {
+        if (this.workItems == null) {
+            this.workItems = new ArrayList<>();
+        }
+        this.workItems.add(item);
+    }
+    
+    public void applyMaterialDiscount(BigDecimal discount) {
+        this.materialDiscount = discount;
+    }
+    
+    public void applyLaborDiscount(BigDecimal discount) {
+        this.laborDiscount = discount;
     }
 }

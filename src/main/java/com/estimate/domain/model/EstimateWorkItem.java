@@ -16,15 +16,10 @@ import java.util.List;
 public class EstimateWorkItem {
     
     private String workId;
-    
     private String workName;
-    
     private String unit;
-    
     private BigDecimal quantity;
-    
     private BigDecimal laborPricePerUnit;
-    
     @Builder.Default
     private List<EstimateMaterialPrice> materialPrices = new ArrayList<>();
     

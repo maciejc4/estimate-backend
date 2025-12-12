@@ -14,11 +14,8 @@ import java.math.BigDecimal;
 public class EstimateMaterialPrice {
     
     private String materialName;
-    
     private String unit;
-    
     private BigDecimal consumptionPerWorkUnit;
-    
     private BigDecimal pricePerUnit;
     
     public BigDecimal calculateCost(BigDecimal workQuantity) {
