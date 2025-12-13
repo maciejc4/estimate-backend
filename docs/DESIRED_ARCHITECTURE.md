@@ -542,5 +542,223 @@ Gateway routes to appropriate service version.
 
 ---
 
-**Status:** Proposal  
+## AI/LLM Integration
+
+### Overview
+
+Enable intelligent conversational features through LLM integration, allowing users and external AI agents to interact with the estimation platform using natural language.
+
+### Target Architecture with AI
+
+```mermaid
+graph TB
+    User["User"]
+
+    subgraph Clients["Client Layer"]
+        WebApp["Web App"]
+        MobileApp["Mobile App"]
+        ChatUI["Chat Interface"]
+        MCPClient["MCP Clients<br/>(Claude Desktop, etc.)"]
+    end
+
+    subgraph AILayer["AI Layer"]
+        MCPServer["MCP Server<br/>(estimate-mcp-server)"]
+        AIService["AI Service<br/>(Embedded Assistant)"]
+        LLM["LLM Provider<br/>(Claude API)"]
+    end
+
+    subgraph Gateway["API Gateway"]
+        Router["Router"]
+        AuthFilter["Auth Filter"]
+    end
+
+    subgraph Services["Microservices"]
+        AuthSvc["Auth Service"]
+        WorksSvc["Works Service"]
+        EstSvc["Estimate Service"]
+    end
+
+    User --> WebApp
+    User --> MobileApp
+    User --> ChatUI
+    User --> MCPClient
+
+    WebApp --> Gateway
+    MobileApp --> Gateway
+    ChatUI --> AIService
+    MCPClient --> MCPServer
+
+    AIService --> LLM
+    LLM -->|Tool Calls| AIService
+    AIService --> Gateway
+
+    MCPServer --> Gateway
+
+    Gateway --> AuthSvc
+    Gateway --> WorksSvc
+    Gateway --> EstSvc
+
+    style AILayer fill:#E8F5E9,stroke:#2e7d32,stroke-width:2px
+    style MCPServer fill:#4CAF50,stroke:#2e7d32,stroke-width:2px,color:#fff
+    style AIService fill:#4CAF50,stroke:#2e7d32,stroke-width:2px,color:#fff
+    style LLM fill:#7E57C2,stroke:#512DA8,stroke-width:2px,color:#fff
+```
+
+### New Components
+
+#### 5. MCP Server
+**Responsibility:** Expose platform data to external LLM clients via Model Context Protocol
+
+```yaml
+Service: estimate-mcp-server
+Technology: TypeScript/Node.js
+Protocol: MCP (Model Context Protocol)
+Tools:
+  - list_works, get_work, create_work
+  - list_templates, get_template
+  - list_estimates, create_estimate, update_estimate
+  - calculate_materials, analyze_estimates
+  - find_expiring_estimates
+Authentication: User JWT token forwarding
+```
+
+**Bounded Context:** AI Integration (External)
+
+#### 6. AI Service (Optional)
+**Responsibility:** Built-in chat assistant for seamless in-app AI experience
+
+```yaml
+Service: ai-service
+Endpoints:
+  - POST /api/ai/chat (SSE streaming)
+  - GET /api/ai/conversations
+  - DELETE /api/ai/conversations/{id}
+Database: MongoDB (conversations collection)
+LLM Provider: Claude API (Anthropic)
+```
+
+**Bounded Context:** AI Integration (Internal)
+
+### AI Integration Flow
+
+```mermaid
+sequenceDiagram
+    participant U as User
+    participant C as Chat UI / MCP Client
+    participant AI as AI Service / MCP Server
+    participant LLM as Claude API
+    participant GW as API Gateway
+    participant API as Backend Services
+
+    U->>C: "Create estimate for bathroom renovation"
+    C->>AI: Message + User Token
+    AI->>LLM: Message + Tool Definitions
+
+    LLM-->>AI: Tool: list_works
+    AI->>GW: GET /api/works (+ JWT)
+    GW->>API: Forward request
+    API-->>GW: Works list
+    GW-->>AI: Works list
+    AI->>LLM: Tool result
+
+    LLM-->>AI: Tool: create_estimate
+    AI->>GW: POST /api/estimates (+ JWT)
+    GW->>API: Forward request
+    API-->>GW: Created estimate
+    GW-->>AI: Estimate response
+    AI->>LLM: Tool result
+
+    LLM-->>AI: Final response
+    AI-->>C: "I created the estimate..."
+    C-->>U: Display response
+```
+
+### Use Cases Enabled
+
+| Use Case | Description |
+|----------|-------------|
+| Conversational Estimates | Create estimates through natural language |
+| Cost Analysis | Ask for cost breakdowns and optimization suggestions |
+| Data Queries | "What's my average bathroom cost this year?" |
+| Template Recommendations | Get suggestions based on project type |
+| Expiring Estimates | "What quotes expire this week?" |
+| Material Calculations | "How much paint for 100m2?" |
+
+### Security Model
+
+```mermaid
+graph LR
+    subgraph External["External Access (MCP)"]
+        MCPClient["MCP Client"]
+        MCPServer["MCP Server"]
+    end
+
+    subgraph Internal["Internal Access (Embedded)"]
+        ChatUI["Chat UI"]
+        AIService["AI Service"]
+    end
+
+    Gateway["API Gateway"]
+    Backend["Backend Services"]
+
+    MCPClient -->|"User provides JWT"| MCPServer
+    MCPServer -->|"Forward JWT"| Gateway
+
+    ChatUI -->|"Session JWT"| AIService
+    AIService -->|"Forward JWT"| Gateway
+
+    Gateway -->|"Validate & Authorize"| Backend
+
+    style External fill:#FFF3E0,stroke:#E65100,stroke-width:2px
+    style Internal fill:#E3F2FD,stroke:#1565C0,stroke-width:2px
+```
+
+**Principles:**
+- All data access through existing APIs (no direct DB access)
+- User JWT forwarded with every request
+- Backend enforces authorization (user can only access own data)
+- Rate limiting per user
+- Audit logging of all AI-initiated actions
+
+### Implementation Phases
+
+| Phase | Component | Tasks |
+|-------|-----------|-------|
+| **AI-1** | MCP Server | Create TypeScript MCP server, implement read-only tools |
+| **AI-2** | MCP Server | Add write tools (create/update estimates), documentation |
+| **AI-3** | Backend | Add analytics endpoints, search capabilities |
+| **AI-4** | AI Service | Embedded assistant with Claude integration |
+| **AI-5** | Frontend | Chat UI component |
+
+### Technology Stack (AI Components)
+
+| Component | Technology |
+|-----------|------------|
+| MCP Server | TypeScript, @modelcontextprotocol/sdk |
+| AI Service | Java 21, Spring WebFlux, Anthropic Java SDK |
+| LLM | Claude (Anthropic) - preferred for MCP compatibility |
+| Conversations DB | MongoDB |
+
+### Cost Estimation (AI Components)
+
+| Resource | Dev | Prod |
+|----------|-----|------|
+| MCP Server (Cloud Run) | $5 | $20 |
+| AI Service (Cloud Run) | $10 | $30 |
+| LLM API (Claude) | $5 | $25-100 |
+| **AI Total** | **~$20** | **~$75-150** |
+
+### Success Criteria (AI)
+
+- [ ] MCP server usable with Claude Desktop
+- [ ] Tool response time < 500ms
+- [ ] Estimate creation via chat < 30 seconds
+- [ ] User satisfaction > 4/5 rating
+- [ ] Error rate < 1%
+
+> **Full Details:** See [LLM_INTEGRATION_PLAN.md](LLM_INTEGRATION_PLAN.md) for complete implementation plan.
+
+---
+
+**Status:** Proposal
 **Next Step:** Team review and approval

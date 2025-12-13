@@ -96,6 +96,21 @@ git push
 | `JWT_SECRET` | jwt | Token signing key |
 | `GCP_PROJECT_ID` | gcp | Firebase project |
 
+## Docker
+
+```bash
+# Build image
+docker build -t estimate-backend:latest .
+
+# Run container (uses embedded MongoDB)
+docker run -d -p 8080:8080 -e SPRING_PROFILES_ACTIVE=jwt estimate-backend:latest
+
+# Check health
+curl http://localhost:8080/actuator/health
+```
+
+**Note:** Dockerfile uses non-Alpine base image for embedded MongoDB compatibility (requires glibc).
+
 ## Documentation
 
 - [docs/authentication.md](docs/authentication.md) - Auth architecture
